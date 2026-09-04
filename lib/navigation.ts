@@ -93,6 +93,7 @@ export const adminNavigation: NavSection[] = [
       { label: "Subjects", href: "/admin/subjects", icon: BookOpen },
       { label: "Timetables", href: "/admin/timetables", icon: CalendarDays },
       { label: "FCFS", href: "/admin/fcfs", icon: GitBranch },
+      { label: "Leave", href: "/admin/leave", icon: FileText },
     ],
   },
   {

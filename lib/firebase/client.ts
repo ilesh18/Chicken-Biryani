@@ -24,9 +24,21 @@ export const facultyFirebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FACULTY_FIREBASE_MEASUREMENT_ID || "G-9YZQ0TM5PZ",
 };
 
-export function getClientFirebaseApp(role: "student" | "faculty"): FirebaseApp {
-  const appName = role === "student" ? "student-app" : "faculty-app";
-  const config = role === "student" ? studentFirebaseConfig : facultyFirebaseConfig;
+type Role = "student" | "faculty" | "admin";
+
+function getRoleConfig(role: Role) {
+  return role === "student" ? studentFirebaseConfig : facultyFirebaseConfig;
+}
+
+function getRoleAppName(role: Role) {
+  if (role === "student") return "student-app";
+  if (role === "faculty") return "faculty-app";
+  return "admin-app";
+}
+
+export function getClientFirebaseApp(role: Role): FirebaseApp {
+  const appName = getRoleAppName(role);
+  const config = getRoleConfig(role);
 
   const existingApps = getApps();
   const existingApp = existingApps.find((app) => app.name === appName);
@@ -36,17 +48,17 @@ export function getClientFirebaseApp(role: "student" | "faculty"): FirebaseApp {
   return initializeApp(config, appName);
 }
 
-export function getClientAuth(role: "student" | "faculty"): Auth {
+export function getClientAuth(role: Role): Auth {
   const app = getClientFirebaseApp(role);
   return getAuth(app);
 }
 
-export function getClientDatabase(role: "student" | "faculty"): Database {
+export function getClientDatabase(role: Role): Database {
   const app = getClientFirebaseApp(role);
   return getDatabase(app);
 }
 
-export async function signInWithGoogleFirebase(role: "student" | "faculty") {
+export async function signInWithGoogleFirebase(role: Role) {
   const auth = getClientAuth(role);
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });

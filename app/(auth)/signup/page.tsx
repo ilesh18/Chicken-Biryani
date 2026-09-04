@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 
-type Role = "student" | "faculty";
+type Role = "student" | "faculty" | "admin";
+
+const ROLE_LABELS: Record<Role, string> = {
+  student: "Student",
+  faculty: "Faculty",
+  admin: "Admin",
+};
 
 function SignupContent() {
   const router = useRouter();
@@ -22,15 +28,21 @@ function SignupContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [role, setRole] = useState<Role>(
-    initialRole === "faculty" ? "faculty" : "student"
+    initialRole === "faculty"
+      ? "faculty"
+      : initialRole === "admin"
+      ? "admin"
+      : "student"
   );
 
   useEffect(() => {
     const roleParam = searchParams.get("role") as Role;
-    if (roleParam === "student" || roleParam === "faculty") {
+    if (roleParam === "student" || roleParam === "faculty" || roleParam === "admin") {
       setRole(roleParam);
     }
   }, [searchParams]);
+
+  const roleName = ROLE_LABELS[role];
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,7 +113,7 @@ function SignupContent() {
         return;
       }
 
-      const targetDashboard = role === "faculty" ? "/faculty/dashboard" : "/student/dashboard";
+      const targetDashboard = role === "faculty" ? "/faculty/dashboard" : role === "admin" ? "/admin/dashboard" : "/student/dashboard";
       window.location.href = targetDashboard;
     } catch (err) {
       const e = err as { code?: string; message?: string };
@@ -132,7 +144,7 @@ function SignupContent() {
             <span>Change Profile</span>
           </Link>
           <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full">
-            {role === "student" ? "Student" : "Faculty"}
+            {roleName}
           </span>
         </div>
 
@@ -141,7 +153,7 @@ function SignupContent() {
             <Logo className="h-12 w-12" />
           </Link>
           <h1 className="text-2xl font-bold text-foreground">
-            Create {role === "student" ? "Student" : "Faculty"} Account
+            Create {roleName} Account
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">Sign up for Campus Hub</p>
         </div>
@@ -172,7 +184,7 @@ function SignupContent() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            {googleLoading ? "Signing up..." : `Sign up with Google (${role === "student" ? "Student" : "Faculty"})`}
+            {googleLoading ? "Signing up..." : `Sign up with Google (${roleName})`}
           </Button>
 
           <div className="relative flex items-center justify-center">
@@ -211,7 +223,7 @@ function SignupContent() {
                 Creating account...
               </span>
             ) : (
-              `Sign up as ${role === "student" ? "Student" : "Faculty"}`
+              `Sign up as ${roleName}`
             )}
           </Button>
         </form>

@@ -11,14 +11,38 @@ import { Label } from "@/components/ui/label";
 import { signInWithGoogleFirebase } from "@/lib/firebase/client";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 
-type ProfileRole = "student" | "faculty";
+type ProfileRole = "student" | "faculty" | "admin";
+
+const ROLE_LABELS: Record<ProfileRole, string> = {
+  student: "Student",
+  faculty: "Faculty",
+  admin: "Admin",
+};
+
+const ROLE_PORTAL: Record<ProfileRole, string> = {
+  student: "Student Portal",
+  faculty: "Faculty Portal",
+  admin: "Admin Portal",
+};
+
+const ROLE_DASHBOARD: Record<ProfileRole, string> = {
+  student: "/student/dashboard",
+  faculty: "/faculty/dashboard",
+  admin: "/admin/dashboard",
+};
+
+const ROLE_PLACEHOLDER: Record<ProfileRole, string> = {
+  student: "student@example.com",
+  faculty: "faculty@example.com",
+  admin: "admin@example.com",
+};
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const initialRole = (searchParams.get("role") as ProfileRole) || "student";
 
   const [profile, setProfile] = React.useState<ProfileRole>(
-    initialRole === "faculty" ? "faculty" : "student"
+    initialRole === "faculty" ? "faculty" : initialRole === "admin" ? "admin" : "student"
   );
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -26,20 +50,21 @@ function LoginContent() {
 
   React.useEffect(() => {
     const roleParam = searchParams.get("role") as ProfileRole;
-    if (roleParam === "student" || roleParam === "faculty") {
+    if (roleParam === "student" || roleParam === "faculty" || roleParam === "admin") {
       setProfile(roleParam);
     }
   }, [searchParams]);
+
+  const roleName = ROLE_LABELS[profile];
+  const targetDashboard = ROLE_DASHBOARD[profile];
 
   async function handleGoogleSignIn() {
     setError(null);
     setGoogleLoading(true);
 
     try {
-      // 1. Firebase Google Sign In with selected role's Firebase app
       const googleUser = await signInWithGoogleFirebase(profile);
 
-      // 2. Register/Sync user in backend database
       try {
         await fetch("/api/auth/google-login", {
           method: "POST",
@@ -55,7 +80,6 @@ function LoginContent() {
         console.warn("Backend user sync warning:", syncErr);
       }
 
-      // 3. Establish NextAuth Session
       const result = await signIn("credentials", {
         email: googleUser.email,
         isGoogleAuth: "true",
@@ -68,8 +92,6 @@ function LoginContent() {
         return;
       }
 
-      // 4. Redirect to role-specific dashboard
-      const targetDashboard = profile === "faculty" ? "/faculty/dashboard" : "/student/dashboard";
       window.location.href = targetDashboard;
     } catch (err) {
       const e = err as { code?: string; message?: string };
@@ -110,8 +132,6 @@ function LoginContent() {
         return;
       }
 
-      // Redirect to role-specific dashboard
-      const targetDashboard = profile === "faculty" ? "/faculty/dashboard" : "/student/dashboard";
       window.location.href = targetDashboard;
     } catch {
       setError("Unable to complete the request.");
@@ -132,7 +152,7 @@ function LoginContent() {
             <span>Change Profile</span>
           </Link>
           <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full">
-            {profile === "student" ? "Student Portal" : "Faculty Portal"}
+            {ROLE_PORTAL[profile]}
           </span>
         </div>
 
@@ -141,10 +161,10 @@ function LoginContent() {
             <Logo className="h-12 w-12" />
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-foreground">
-            {profile === "student" ? "Student Sign In" : "Faculty Sign In"}
+            {roleName} Sign In
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">
-            Sign in to access your {profile === "student" ? "Student" : "Faculty"} Dashboard
+            Sign in to access your {roleName} Dashboard
           </p>
         </div>
 
@@ -175,11 +195,9 @@ function LoginContent() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>
-              {googleLoading
-                ? `Signing in as ${profile === "student" ? "Student" : "Faculty"}...`
-                : `Sign in with Google (${profile === "student" ? "Student" : "Faculty"})`}
-            </span>
+            {googleLoading
+              ? `Signing in as ${roleName}...`
+              : `Sign in with Google (${roleName})`}
           </Button>
 
           <div className="relative flex items-center justify-center">
@@ -199,7 +217,7 @@ function LoginContent() {
               name="email"
               type="email"
               required
-              placeholder={profile === "student" ? "student@example.com" : "faculty@example.com"}
+              placeholder={ROLE_PLACEHOLDER[profile]}
               autoComplete="email"
             />
           </div>
@@ -228,14 +246,14 @@ function LoginContent() {
           )}
 
           <Button type="submit" className="w-full py-5 font-semibold" disabled={loading || googleLoading}>
-            {loading ? "Signing in..." : `Sign in as ${profile === "student" ? "Student" : "Faculty"}`}
+            {loading ? "Signing in..." : `Sign in as ${roleName}`}
           </Button>
         </form>
 
         <p className="text-center text-sm text-foreground-muted">
           Don&apos;t have an account?{" "}
           <Link href={`/signup?role=${profile}`} className="text-accent hover:underline font-medium">
-            Sign up as {profile === "student" ? "Student" : "Faculty"}
+            Sign up as {roleName}
           </Link>
         </p>
       </div>
